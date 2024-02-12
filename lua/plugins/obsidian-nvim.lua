@@ -29,52 +29,45 @@ return {
         workspaces = {
           {
             name = "notebox",
-            path = "/run/media/blaze/New Volume/Documents/Second Brain/Zettelkasten",
-            overrides = {
-              notes_subdir = "00-NoteBox",
-            },
+            path = "/home/blaze/Documents/Second Brain/Zettelkasten/00",
+            strict = true,
+            overrides = {},
           },
           {
             name = "random",
-            path = "/run/media/blaze/New Volume/Documents/Second Brain/Zettelkasten",
-            overrides = {
-              notes_subdir = "0-RandomThoughts",
-            },
+            path = "/home/blaze/Documents/Second Brain/Zettelkasten/0",
+            strict = true,
+            overrides = {},
           },
           {
             name = "projects",
-            path = "/run/media/blaze/New Volume/Documents/Second Brain/Zettelkasten",
-            overrides = {
-              notes_subdir = "01-Projects",
-            },
+            path = "/home/blaze/Documents/Second Brain/Zettelkasten/01",
+            strict = true,
+            overrides = {},
           },
           {
             name = "themes",
-            path = "/run/media/blaze/New Volume/Documents/Second Brain/Zettelkasten",
-            overrides = {
-              notes_subdir = "02-Themes",
-            },
+            path = "/home/blaze/Documents/Second Brain/Zettelkasten/02",
+            strict = true,
+            overrides = {},
           },
           {
             name = "resources",
-            path = "/run/media/blaze/New Volume/Documents/Second Brain/Zettelkasten",
-            overrides = {
-              notes_subdir = "03-Resources",
-            },
+            path = "/home/blaze/Documents/Second Brain/Zettelkasten/03",
+            strict = true,
+            overrides = {},
           },
           {
             name = "archive",
-            path = "/run/media/blaze/New Volume/Documents/Second Brain/Zettelkasten",
-            overrides = {
-              notes_subdir = "04-Archive",
-            },
+            path = "/home/blaze/Documents/Second Brain/Zettelkasten/04",
+            strict = true,
+            overrides = {},
           },
           {
             name = "journal",
-            path = "/run/media/blaze/New Volume/Documents/Second Brain/Zettelkasten",
-            overrides = {
-              notes_subdir = "05-Journal",
-            },
+            path = "/home/blaze/Documents/Second Brain/Zettelkasten/05",
+            strict = true,
+            overrides = {},
           },
         },
 
@@ -91,7 +84,7 @@ return {
         -- Optional, completion of wiki links, local markdown links, and tags using nvim-cmp.
         daily_notes = {
           -- Optional, if you keep daily notes in a separate directory.
-          folder = "05-Journal/dailies",
+          folder = "05/dailies",
           -- Optional, if you want to change the date format for the ID of daily notes.
           date_format = "%Y-%m-%d",
           -- Optional, if you want to change the date format of the default alias of daily notes.
@@ -154,6 +147,7 @@ return {
           -- Create note IDs in a Zettelkasten format with a timestamp and a suffix.
           -- In this case a note with the title 'My new note' will be given an ID that looks
           -- like '1657296016-my-new-note', and therefore the file name '1657296016-my-new-note.md'
+          local currentDate = os.date("%d%m%Y")
           local suffix = ""
           if title ~= nil then
             -- If title is given, transform it into valid file name.
@@ -164,23 +158,29 @@ return {
               suffix = suffix .. string.char(math.random(65, 90))
             end
           end
-          return tostring(os.time()) .. "-" .. suffix
+          return currentDate .. "-" .. suffix
         end,
+        -- optional, customize the default name or prefix when pasting images via `:obsidianpasteimg`.
 
-        -- Optional, customize the default name or prefix when pasting images via `:ObsidianPasteImg`.
         image_name_func = function()
-          -- Prefix image names with timestamp.
+          -- prefix image names with timestamp.
           return string.format("%s-", os.time())
         end,
 
-        -- Optional, boolean or a function that takes a filename and returns a boolean.
+        -- optional, boolean or a function that takes a filename and returns a boolean.
         -- `true` indicates that you don't want obsidian.nvim to manage frontmatter.
         disable_frontmatter = false,
 
         -- Optional, alternatively you can customize the frontmatter data.
         note_frontmatter_func = function(note)
-          -- This is equivalent to the default frontmatter function.
-          local out = { id = note.id, aliases = note.aliases, tags = note.tags }
+          -- Add the title of the note as an alias.
+          local currentDate = os.date("%Y-%m-%d")
+          if note.title then
+            note:add_alias(note.title)
+            note:add_field(note("date", currentDate))
+          end
+          local out = { id = note.id, aliases = note.aliases, tags = note.tags, date = currentDate }
+
           -- `note.metadata` contains any manually added fields in the frontmatter.
           -- So here we just make sure those fields are kept in the frontmatter.
           if note.metadata ~= nil and not vim.tbl_isempty(note.metadata) then
@@ -188,6 +188,7 @@ return {
               out[k] = v
             end
           end
+
           return out
         end,
 
@@ -302,6 +303,7 @@ return {
           -- If this is a relative path it will be interpreted as relative to the vault root.
           -- You can always override this per image by passing a full path to the command instead of just a filename.
           img_folder = "assets/imgs", -- This is the default
+
           -- A function that determines the text to insert in the note when pasting an image.
           -- It takes two arguments, the `obsidian.Client` and a plenary `Path` to the image file.
           -- This is the default implementation.
@@ -324,7 +326,6 @@ return {
         },
 
         -- Optional, set the YAML parser to use. The valid options are:
-        --  * "native" - uses a pure Lua parser that's fast but potentially misses some edge cases.
         --  * "yq" - uses the command-line tool yq (https://github.com/mikefarah/yq), which is more robust
         --    but much slower and needs to be installed separately.
         -- In general you should be using the native parser unless you run into a bug with it, in which
